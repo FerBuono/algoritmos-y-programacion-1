@@ -1,3 +1,4 @@
+from re import M
 from logic import formatear_dimensiones, crear_matriz, mostrar_juego, mover, randomizar_matriz
 
 def main():
@@ -9,6 +10,8 @@ def main():
         Direcciones válidas: 'a', 'w', 's, 'd'
         Para finalizar el juego: 'o'
     '''
+    # Variable en donde se guardan los movimientos realizados en la partida
+    movimientos = 0
 
     # Ingreso las dimensiones del juego
     dimension_tablero = input('\nIngrese las dimensiones del tablero (ej: 4x3): ')
@@ -20,23 +23,29 @@ def main():
     matriz_juego = crear_matriz(filas, columnas)
     matriz_backup = crear_matriz(filas, columnas)
 
+    # Cantidad de movimientos para 'randomizar' la matriz, y cantidad límite de movimientos
+    Z = (filas * columnas) * 5
+    N = Z * 5
+
     # 'Randomizado' de la matriz de juego 
-    randomizar_matriz(matriz_juego)
+    randomizar_matriz(matriz_juego, Z)
     
     # Mostrar tablero inicial
     mostrar_juego(matriz_juego)
-    
-    # Variable en donde se guardan los movimientos realizados en la partida
-    movimientos = 0
+    print('Movimientos realizados: ', movimientos)
+    print('Movimientos restantes: ', N - movimientos)
 
     # Verifico que mientras la matriz de juego sea distinta a la de backup y el jugador quiera seguir jugando, se le pida un nuevo movimiento. Este tiene que ser valido y de no ser así se le solicita una nueva entrada. Se muestra en cada entrada válida el tablero nuevamente
-    while matriz_juego != matriz_backup:
+    while (matriz_juego != matriz_backup) and (movimientos < N):
         entradas = input('Entrada/s: ')
         entradas_separadas = list(entradas)
         for entrada in entradas_separadas:
-            if entrada not in ['a', 'w', 'd', 's', 'o']:
-                entradas = input('Por favor, ingrese entradas válidas: ')
+            while entrada not in ['a', 'w', 'd', 's', 'o']:
+                entrada = input('"' + entrada + '" no es válida, intente nuevamente: ')
             if entrada == 'o':
+                mostrar_juego(matriz_juego)
+                print('Movimientos realizados: ', movimientos)
+                print('Movimientos restantes: ', N - movimientos)
                 print('\nJuego finalizado :(\n')
                 return
             
@@ -45,7 +54,12 @@ def main():
 
         mostrar_juego(matriz_juego)
         print('Movimientos realizados: ', movimientos)
-        
+        print('Movimientos restantes: ', N - movimientos)
+    
+    if movimientos >= N:
+        print('\nPerdiste :(\n')
+        return
+
     print('\n¡GANASTE!\n')
 
 main()

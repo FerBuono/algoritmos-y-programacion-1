@@ -79,12 +79,11 @@ def mover(direccion, matriz):
                     return
 
 
-def randomizar_matriz(matriz):
+def randomizar_matriz(matriz, Z):
     '''
         Función que altera el órden de los elementos de una matriz. Utiliza el módulo random para generar números al azar entre 0 y la cantidad de movimientos posibles menos 1, y llama a la función mover() mandando como parámetros el movimiento dado por el número random, y la matriz a alterar
     '''
-    Z = 50
     movimientos = ['a', 'w', 'd', 's']
-    for i in range(Z + 1):
+    for i in range(Z):
         random_num = random.randint(0, len(movimientos) - 1)
         mover(movimientos[random_num], matriz)
