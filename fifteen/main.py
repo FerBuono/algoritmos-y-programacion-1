@@ -1,6 +1,5 @@
-from logic import formatear_dimensiones, crear_matriz, mostrar_juego, juego
+from logic import formatear_dimensiones, crear_matriz, mostrar_juego, mover, MOVIMIENTOS_RANDOM, MOVIMIENTOS
 
-MOVIMIENTOS_RANDOM = 50
 
 def main():
     '''
@@ -16,35 +15,39 @@ def main():
         Para finalizar el juego: 'o'
     '''
     movimientos = 0
-  
     limite_movimientos = MOVIMIENTOS_RANDOM * 5
 
     dimension_tablero = input('\nIngrese las dimensiones del tablero (ej: 4x3): ')
 
-    filas, columnas = formatear_dimensiones(dimension_tablero)
-
-    matriz_juego = crear_matriz(filas, columnas, MOVIMIENTOS_RANDOM)
-    # Matriz backup con la que comparar si gana o no
-    matriz_backup = crear_matriz(filas, columnas, 0)
+    matriz_juego, matriz_backup = crear_matriz(dimension_tablero)
 
     # Mostrar juego inicial
     mostrar_juego(matriz_juego, movimientos, limite_movimientos)
 
-    estado_de_juego = 'Jugando'
+    # Mientras no esté finalizado, seguir solicitando entradas
+    while (matriz_juego != matriz_backup) and (movimientos < limite_movimientos):
+        entradas = input('Entrada/s: ')
 
-    # Si el estado es 'Jugando', se sigue jugando
-    while estado_de_juego == 'Jugando':
-        estado_de_juego = juego(matriz_juego, matriz_backup, movimientos, limite_movimientos)
+        for entrada in entradas:
+            while entrada not in MOVIMIENTOS + ['o']:
+                entrada = input('"' + entrada + '" no es válida, intente nuevamente: ')
 
-    if estado_de_juego == 'Ganaste':
-        print('\n¡GANASTE!\n')
-        return
-    elif estado_de_juego == 'Perdiste':
-        print('\nPerdiste :(\n')
-        return
-    else:
-        print('\nJuego finalizado :(\n')
-        return
+            if entrada == 'o':
+                mostrar_juego(matriz_juego, movimientos, limite_movimientos)
+                print('\nJuego finalizado...\n')
+                return
+            
+            mover(entrada, matriz_juego)
+            movimientos += 1
 
+            if movimientos >= limite_movimientos:
+                mostrar_juego(matriz_juego, movimientos, limite_movimientos)
+                print('\nPerdiste :(\n')
+                return
+
+        mostrar_juego(matriz_juego, movimientos, limite_movimientos)
+    
+    print('\n¡¡Ganaste!!\n')
+    return
 
 main()
