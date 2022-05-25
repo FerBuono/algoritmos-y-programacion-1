@@ -1,0 +1,16 @@
+caballo,1;2,false
+caballo,2;1,false
+caballo,-1;2,false
+caballo,-2;1,false
+caballo,-1;-2,false
+caballo,-2;-1,false
+caballo,1;-2,false
+caballo,2;-1,false
+torre,0;1,true
+torre,1;0,true
+torre,-1;0,true
+torre,0;-1,true
+alfil,1;1,true
+alfil,-1;1,true
+alfil,-1;-1,true
+alfil,1;-1,true
