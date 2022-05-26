@@ -106,18 +106,18 @@ def juego_actualizar(movimientos, juego, x, y):
         if juego[casillero_y][casillero_x] != VACIO: 
             pieza, estado = juego[casillero_y][casillero_x]
 
-            pos_x_activa, pos_y_activa = '', ''
-            
-            # Busco la posición de la pieza activa y borro el estado de todas
-            for fil in range(len(juego)):
-                for col in range(len(juego[fil])):
-                    if juego[fil][col] != VACIO:
-                        if juego[fil][col][1] == 'activa':
-                            pos_x_activa, pos_y_activa = col, fil
-
-                        juego[fil][col] = (juego[fil][col][0], '')
-
             if estado == 'posible': 
+                pos_x_activa, pos_y_activa = '', ''
+                
+                # Busco la posición de la pieza activa y borro el estado de todas
+                for fil in range(len(juego)):
+                    for col in range(len(juego[fil])):
+                        if juego[fil][col] != VACIO:
+                            if juego[fil][col][1] == 'activa':
+                                pos_x_activa, pos_y_activa = col, fil
+
+                            juego[fil][col] = (juego[fil][col][0], '')
+
                 juego[casillero_y][casillero_x] = (pieza, 'activa')
                 juego[pos_y_activa][pos_x_activa] = VACIO
 
