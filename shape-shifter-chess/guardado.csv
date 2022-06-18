@@ -1,8 +1,4 @@
-,,,,,,,
-,"('caballo', 'activa')",,,,,"('alfil', '')",
-,,,"('alfil', 'posible')",,,,
-,,"('alfil', 'posible')",,"('alfil', '')",,,
-,,"('caballo', '')","('caballo', '')",,,,
-"('caballo', '')",,,,,"('alfil', '')",,
-,,,,,,,
-,,,,,,,
+1;6,alfil,activa
+3;4,rey,posible
+3;5,peon,
+4;6,alfil,
