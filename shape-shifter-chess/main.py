@@ -8,10 +8,13 @@ ALTO_TABLERO = 400
 TAM_CASILLERO = ANCHO_TABLERO // 8
 CASILLEROS = 8
 VACIO = ''
+PIEZA_ACTIVA = 'activa'
+PIEZA_POSIBLE = 'posible'
 SANGRIA_TEXTO = TAM_CASILLERO * 0.5
 RUTA_MOVIMIENTOS = 'movimientos.csv'
 RUTA_GUARDADO = 'guardado.csv'
 RESPUESTAS_PROMPT = {'si': True, 'no': False}
+
 
 def cargar_juego():
     '''
@@ -29,6 +32,7 @@ def cargar_juego():
             
     return juego, nivel - 2
 
+
 def guardar_juego(juego):
     with open(RUTA_GUARDADO, "w", newline = '') as guardado:
         guardado = csv.writer(guardado)
@@ -38,7 +42,8 @@ def guardar_juego(juego):
                     pieza, estado = juego[fil][col]
                     guardado.writerow([f'{fil};{col}', pieza, estado])
 
-def movimientos_piezas():
+
+def cargar_movimientos_piezas():
     '''
         Devuelve un diccionario con las piezas como clave y una lista de sus posibles movimientos como valor
     '''
@@ -67,7 +72,7 @@ def juego_nuevo(movimientos, nivel):
     pos_x_original, pos_y_original = random.randint(0, CASILLEROS - 1), random.randint(0, CASILLEROS - 1)
     pieza_original = random.choice(list(movimientos))
     
-    juego[pos_y_original][pos_x_original] = (pieza_original, 'activa')
+    juego[pos_y_original][pos_x_original] = (pieza_original, PIEZA_ACTIVA)
     
     pieza = pieza_original
     pos_x, pos_y = pos_x_original, pos_y_original
@@ -78,53 +83,39 @@ def juego_nuevo(movimientos, nivel):
             dir_x, dir_y = random.choice(movimientos[pieza])
             suma_x, suma_y = pos_x + dir_x, pos_y + dir_y
 
-            if (suma_x in range(CASILLEROS)) and (suma_y in range(CASILLEROS)) and (juego[suma_y][suma_x] == VACIO):
+            if suma_x in range(CASILLEROS) and suma_y in range(CASILLEROS) and juego[suma_y][suma_x] == VACIO:
             
                 pieza = random.choice(list(movimientos))
                 pos_x, pos_y = suma_x, suma_y 
 
                 juego[pos_y][pos_x] = (pieza, '')
-
-                for direccion in movimientos[pieza_original]:
-                    dir_x_original, dir_y_original = direccion
-
-                    if (pos_x == dir_x_original + pos_x_original) and (pos_y == dir_y_original + pos_y_original):
-                        juego[pos_y][pos_x] = (pieza, 'posible')
-                        
+                
+                if (dir_x, dir_y) in movimientos[pieza_original]:
+                    juego[pos_y][pos_x] = (pieza, PIEZA_POSIBLE)
+                    
                 break
 
     guardar_juego(juego)
-
     return juego
 
-def juego_actualizar(movimientos, juego, x, y):
-    '''
-        Actualiza el juego y el estado de las piezas dependiendo del movimiento realizado
-    '''
-    casillero_x, casillero_y = x // TAM_CASILLERO, y // TAM_CASILLERO
-    
-    if casillero_x >= CASILLEROS or casillero_y >= CASILLEROS or juego[casillero_y][casillero_x] == VACIO:
-        return juego
 
-    pieza, estado = juego[casillero_y][casillero_x]
-
-    if estado != 'posible':
-        return juego
-        
-    pos_x_activa, pos_y_activa = '', ''
-    
+def actualizacion_pieza_activa(juego, pieza, casillero_x, casillero_y):
     # Busco la posición de la pieza activa y borro el estado de todas
+    pos_x_activa, pos_y_activa = '', ''
+
     for fil in range(len(juego)):
         for col in range(len(juego[fil])):
             if juego[fil][col] != VACIO:
-                if juego[fil][col][1] == 'activa':
+                if juego[fil][col][1] == PIEZA_ACTIVA:
                     pos_x_activa, pos_y_activa = col, fil
 
                 juego[fil][col] = (juego[fil][col][0], '')
 
-    juego[casillero_y][casillero_x] = (pieza, 'activa')
+    juego[casillero_y][casillero_x] = (pieza, PIEZA_ACTIVA)
     juego[pos_y_activa][pos_x_activa] = VACIO
 
+
+def actualizacion_piezas_posibles(juego, pieza, casillero_x, casillero_y, movimientos):
     # Cambio el estado de las nuevas piezas posibles
     for direccion in movimientos[pieza]:
         dir_x, dir_y = direccion
@@ -133,9 +124,27 @@ def juego_actualizar(movimientos, juego, x, y):
             for col in range(len(juego[fil])):
                 suma_x, suma_y = dir_x + casillero_x, dir_y + casillero_y
                 if suma_x == col and suma_y == fil and juego[fil][col] != VACIO:
-                    juego[fil][col] = (juego[fil][col][0], 'posible')
-                    
+                    juego[fil][col] = (juego[fil][col][0], PIEZA_POSIBLE)
+
+def juego_actualizar(movimientos, juego, x, y):
+    '''
+        Actualiza el juego y el estado de las piezas dependiendo del movimiento realizado
+    '''
+    casillero_x, casillero_y = x // TAM_CASILLERO, y // TAM_CASILLERO
+    
+    if not casillero_x in range(CASILLEROS) or not casillero_y in range(CASILLEROS) or juego[casillero_y][casillero_x] == VACIO:
+        return juego
+
+    pieza, estado = juego[casillero_y][casillero_x]
+
+    if estado != PIEZA_POSIBLE:
+        return juego
+    
+    actualizacion_pieza_activa(juego, pieza, casillero_x, casillero_y)
+    actualizacion_piezas_posibles(juego, pieza, casillero_x, casillero_y, movimientos)
+
     return juego
+
 
 def juego_mostrar(juego, nivel):
     '''
@@ -153,12 +162,12 @@ def juego_mostrar(juego, nivel):
             else:
                 gamelib.draw_rectangle(casillero_x * TAM_CASILLERO + 2, casillero_y * TAM_CASILLERO + 2, TAM_CASILLERO * (casillero_x + 1) - 2, TAM_CASILLERO * (casillero_y + 1) - 2, fill='#171717')
 
-            if juego[casillero_y][casillero_x] != '':
+            if juego[casillero_y][casillero_x] != VACIO:
                 pieza, estado = juego[casillero_y][casillero_x]
 
-                if estado == 'activa':
+                if estado == PIEZA_ACTIVA:
                     gamelib.draw_image(f"img/{pieza}_rojo.gif", (casillero_x * TAM_CASILLERO) + 3, (casillero_y * TAM_CASILLERO) + 3)
-                elif estado == 'posible':
+                elif estado == PIEZA_POSIBLE:
                     gamelib.draw_rectangle(casillero_x * TAM_CASILLERO + 3, casillero_y * TAM_CASILLERO + 3, TAM_CASILLERO * (casillero_x + 1) - 2, TAM_CASILLERO * (casillero_y + 1) - 2, fill = '', outline = 'red', width = '2')
                     gamelib.draw_image(f"img/{pieza}_blanco.gif", (casillero_x * TAM_CASILLERO) + 3, (casillero_y * TAM_CASILLERO) + 3)
                 elif estado == '':
@@ -172,7 +181,7 @@ def juego_mostrar(juego, nivel):
     gamelib.draw_end()
 
 def main():
-    movimientos = movimientos_piezas()
+    movimientos = cargar_movimientos_piezas()
     juego = []
     nivel = 0 
     cargar = None

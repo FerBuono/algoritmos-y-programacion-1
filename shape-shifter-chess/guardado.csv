@@ -1,4 +1,8 @@
-1;6,alfil,activa
-3;4,rey,posible
-3;5,peon,
-4;6,alfil,
+1;0,rey,
+1;1,reina,posible
+1;4,caballo,activa
+2;0,peon,
+2;2,torre,
+2;3,caballo,posible
+2;6,reina,posible
+4;2,caballo,
