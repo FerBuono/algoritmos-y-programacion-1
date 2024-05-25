@@ -1,203 +1,197 @@
 import gamelib
-from juegoflood import JuegoFlood
-from flood import COLORES
+from game.flood import COLORS
+from game.flood_game import FloodGame
 
-# Constantes para inicializar el estado del juego
-# Si N_COLORES es mayor a 10, deben agregarse mas entradas al
-# arreglo COLORES mas abajo
-ANCHO_JUEGO = 15
-ALTO_JUEGO = 12
-N_COLORES = 5
+# Constants to initialize the game state
+# If N_COLORS is greater than 10, more entries must be added to
+# the COLORS array below.
+GAME_WIDTH = 15
+GAME_HEIGHT = 12
+N_COLORS = 5
 
-# Constantes de visuales
-TAM_CELDA = 35
-ANCHO_LINEA = 2
-MOSTRAR_NUMEROS = False  # útil activarlo por si no son claros los diferentes colores
+# Visual constants
+CELL_SIZE = 35
+LINE_WIDTH = 2
+SHOW_NUMBERS = False  # useful to enable if colors are not clear
 
-MARGEN = 20
+MARGIN = 20
 
-ALTURA_MOV = ALTO_JUEGO * TAM_CELDA + MARGEN * 2
-ALTURA_BOTONES = ALTURA_MOV + MARGEN
-ANCHO_BOTONES = (ANCHO_JUEGO * TAM_CELDA - MARGEN) // 2
-ANCHO_VENTANA = ANCHO_JUEGO * TAM_CELDA + MARGEN * 2
-ALTO_VENTANA = ALTURA_BOTONES + (TAM_CELDA + MARGEN) * 2
+MOVE_HEIGHT = GAME_HEIGHT * CELL_SIZE + MARGIN * 2
+BUTTONS_HEIGHT = MOVE_HEIGHT + MARGIN
+BUTTONS_WIDTH = (GAME_WIDTH * CELL_SIZE - MARGIN) // 2
+WINDOW_WIDTH = GAME_WIDTH * CELL_SIZE + MARGIN * 2
+WINDOW_HEIGHT = BUTTONS_HEIGHT + (CELL_SIZE + MARGIN) * 2
 
-def juego_crear():
-    juego = JuegoFlood(ALTO_JUEGO, ANCHO_JUEGO, N_COLORES)
-    return juego
+def create_game():
+    game = FloodGame(GAME_HEIGHT, GAME_WIDTH, N_COLORS)
+    return game
 
+def handle_click(game, x, y):
+    row = (y - MARGIN) // CELL_SIZE
+    col = (x - MARGIN) // CELL_SIZE
 
-def manejar_click(juego, x, y):
-    fil = (y - MARGEN) // TAM_CELDA
-    col = (x - MARGEN) // TAM_CELDA
+    height, width = game.dimensions()
 
-    alto, ancho = juego.dimensiones()
-
-    if 0 <= fil < alto and 0 <= col < ancho:
-        color = juego.obtener_color(
-            (y - MARGEN) // TAM_CELDA,
-            (x - MARGEN) // TAM_CELDA
+    if 0 <= row < height and 0 <= col < width:
+        color = game.get_color(
+            (y - MARGIN) // CELL_SIZE,
+            (x - MARGIN) // CELL_SIZE
         )
-        juego.cambiar_color(color)
+        game.change_color(color)
 
-    # Primer fila de botones
-    if 0 <= y - ALTURA_BOTONES < TAM_CELDA:
-        if 0 <= x - MARGEN < ANCHO_BOTONES:
-            juego.deshacer()
-        if 0 <= x - MARGEN * 2 - ANCHO_BOTONES < ANCHO_BOTONES:
-            juego.rehacer()
+    # First row of buttons
+    if 0 <= y - BUTTONS_HEIGHT < CELL_SIZE:
+        if 0 <= x - MARGIN < BUTTONS_WIDTH:
+            game.undo()
+        if 0 <= x - MARGIN * 2 - BUTTONS_WIDTH < BUTTONS_WIDTH:
+            game.redo()
 
-    # Segunda fila de botones
-    if 0 <= y - ALTURA_BOTONES - TAM_CELDA - MARGEN < TAM_CELDA:
-        if 0 <= x - MARGEN < ANCHO_BOTONES:
-            return juego_crear()
-        if 0 <= x - MARGEN * 2 - ANCHO_BOTONES < ANCHO_BOTONES:
-            juego.calcular_nueva_solucion()
+    # Second row of buttons
+    if 0 <= y - BUTTONS_HEIGHT - CELL_SIZE - MARGIN < CELL_SIZE:
+        if 0 <= x - MARGIN < BUTTONS_WIDTH:
+            return create_game()
+        if 0 <= x - MARGIN * 2 - BUTTONS_WIDTH < BUTTONS_WIDTH:
+            game.calculate_new_solution()
 
-    return juego
+    return game
 
+def display_grid(game):
+    height, width = game.dimensions()
 
-
-def juego_mostrar_grilla(juego):
-    alto, ancho = juego.dimensiones()
-
-    # Muestra los cuadrados de colores
-    for f in range(alto):
-        for c in range(ancho):
-            color = juego.obtener_color(f, c)
+    # Display the colored squares
+    for r in range(height):
+        for c in range(width):
+            color = game.get_color(r, c)
             gamelib.draw_rectangle(
-                c * TAM_CELDA + MARGEN,
-                f * TAM_CELDA + MARGEN,
-                (c + 1) * TAM_CELDA + MARGEN,
-                (f + 1) * TAM_CELDA + MARGEN,
-                fill=COLORES[color],
+                c * CELL_SIZE + MARGIN,
+                r * CELL_SIZE + MARGIN,
+                (c + 1) * CELL_SIZE + MARGIN,
+                (r + 1) * CELL_SIZE + MARGIN,
+                fill=COLORS[color],
                 width=0
             )
-            if juego.hay_proximo_paso() and color == juego.proximo_paso():
+            if game.has_next_step() and color == game.next_step():
                 gamelib.draw_oval(
-                    c * TAM_CELDA + MARGEN + TAM_CELDA // 4,
-                    f * TAM_CELDA + MARGEN + TAM_CELDA // 4,
-                    (c + 1) * TAM_CELDA + MARGEN - TAM_CELDA // 4,
-                    (f + 1) * TAM_CELDA + MARGEN - TAM_CELDA // 4,
+                    c * CELL_SIZE + MARGIN + CELL_SIZE // 4,
+                    r * CELL_SIZE + MARGIN + CELL_SIZE // 4,
+                    (c + 1) * CELL_SIZE + MARGIN - CELL_SIZE // 4,
+                    (r + 1) * CELL_SIZE + MARGIN - CELL_SIZE // 4,
                     fill='black',
                     width=1
                 )
 
-    # Muestra las líneas "divisoras"
-    for f in range(alto):
-        for c in range(ancho):
-            color = juego.obtener_color(f, c)
-            if MOSTRAR_NUMEROS:
+    # Display the "divider" lines
+    for r in range(height):
+        for c in range(width):
+            color = game.get_color(r, c)
+            if SHOW_NUMBERS:
                 gamelib.draw_text(
                     str(color),
-                    c * TAM_CELDA + TAM_CELDA // 2 + MARGEN,
-                    f * TAM_CELDA + TAM_CELDA // 2 + MARGEN,
+                    c * CELL_SIZE + CELL_SIZE // 2 + MARGIN,
+                    r * CELL_SIZE + CELL_SIZE // 2 + MARGIN,
                     bold=True,
                     fill='white',
                     anchor='center',
-                    size=TAM_CELDA // 2
+                    size=CELL_SIZE // 2
                 )
-            if f + 1 < alto and juego.obtener_color(f + 1, c) != color:
+            if r + 1 < height and game.get_color(r + 1, c) != color:
                 gamelib.draw_line(
-                    c * TAM_CELDA - ANCHO_LINEA / 2 + MARGEN,
-                    (f + 1) * TAM_CELDA + MARGEN,
-                    (c + 1) * TAM_CELDA + ANCHO_LINEA / 2 + MARGEN,
-                    (f + 1) * TAM_CELDA + MARGEN,
+                    c * CELL_SIZE - LINE_WIDTH / 2 + MARGIN,
+                    (r + 1) * CELL_SIZE + MARGIN,
+                    (c + 1) * CELL_SIZE + LINE_WIDTH / 2 + MARGIN,
+                    (r + 1) * CELL_SIZE + MARGIN,
                     fill='black',
-                    width=ANCHO_LINEA
+                    width=LINE_WIDTH
                 )
-            if c + 1 < ancho and juego.obtener_color(f, c + 1) != color:
+            if c + 1 < width and game.get_color(r, c + 1) != color:
                 gamelib.draw_line(
-                    (c + 1) * TAM_CELDA + MARGEN,
-                    f * TAM_CELDA - ANCHO_LINEA / 2 + MARGEN,
-                    (c + 1) * TAM_CELDA + MARGEN,
-                    (f + 1) * TAM_CELDA + ANCHO_LINEA / 2 + MARGEN,
+                    (c + 1) * CELL_SIZE + MARGIN,
+                    r * CELL_SIZE - LINE_WIDTH / 2 + MARGIN,
+                    (c + 1) * CELL_SIZE + MARGIN,
+                    (r + 1) * CELL_SIZE + LINE_WIDTH / 2 + MARGIN,
                     fill='black',
-                    width=ANCHO_LINEA
+                    width=LINE_WIDTH
                 )
-
 
     gamelib.draw_rectangle(
-        MARGEN,
-        MARGEN,
-        ancho * TAM_CELDA + MARGEN,
-        alto * TAM_CELDA + MARGEN,
+        MARGIN,
+        MARGIN,
+        width * CELL_SIZE + MARGIN,
+        height * CELL_SIZE + MARGIN,
         fill=None,
-        width=ANCHO_LINEA
+        width=LINE_WIDTH
     )
 
-
-def juego_mostrar_controles(juego):
+def display_controls(game):
     gamelib.draw_rectangle(
         0,
         0,
-        ANCHO_VENTANA,
-        ALTO_VENTANA,
+        WINDOW_WIDTH,
+        WINDOW_HEIGHT,
         fill='lightgrey'
     )
 
-    color_movimientos = 'black'
-    mejor_n_movimientos = juego.mejor_n_movimientos
-    texto_movimientos = f'Movimientos: {juego.n_movimientos} / {mejor_n_movimientos}'
-    if juego.n_movimientos > mejor_n_movimientos:
-        color_movimientos = 'red'
-        texto_movimientos += '  :('
-    elif juego.esta_completado():
-        color_movimientos = 'blue'
-        texto_movimientos += '  :)'
+    move_color = 'black'
+    best_move_count = game.best_move_count
+    move_text = f'Moves: {game.move_count} / {best_move_count}'
+    if game.move_count > best_move_count:
+        move_color = 'red'
+        move_text += '  :('
+    elif game.is_completed():
+        move_color = 'blue'
+        move_text += '  :)'
 
     gamelib.draw_text(
-        texto_movimientos,
-        ANCHO_VENTANA // 3,
-        ALTURA_MOV,
+        move_text,
+        WINDOW_WIDTH // 3,
+        MOVE_HEIGHT,
         anchor='w',
         bold=True,
-        fill=color_movimientos
+        fill=move_color
     )
 
-    acciones = [
-        'Deshacer (Z)',
-        'Rehacer (X)',
-        'Nuevo (N)',
-        'Solucionar (S)',
+    actions = [
+        'Undo (Z)',
+        'Redo (X)',
+        'New (N)',
+        'Solve (S)',
     ]
     for i in range(4):
         gamelib.draw_rectangle(
-            MARGEN + (ANCHO_BOTONES + MARGEN) * (i % 2),
-            ALTURA_BOTONES + (TAM_CELDA + MARGEN if i >= 2 else 0),
-            (ANCHO_BOTONES + MARGEN) * (i % 2 + 1),
-            ALTURA_BOTONES + TAM_CELDA + (TAM_CELDA + MARGEN if i >= 2 else 0),
-            width=ANCHO_LINEA
+            MARGIN + (BUTTONS_WIDTH + MARGIN) * (i % 2),
+            BUTTONS_HEIGHT + (CELL_SIZE + MARGIN if i >= 2 else 0),
+            (BUTTONS_WIDTH + MARGIN) * (i % 2 + 1),
+            BUTTONS_HEIGHT + CELL_SIZE + (CELL_SIZE + MARGIN if i >= 2 else 0),
+            width=LINE_WIDTH
         )
         gamelib.draw_text(
-            acciones[i],
-            MARGEN + (ANCHO_BOTONES + MARGEN) * (i % 2) + ANCHO_BOTONES // 2,
-            ALTURA_BOTONES + TAM_CELDA // 2 + (TAM_CELDA + MARGEN if i >= 2 else 0),
+            actions[i],
+            MARGIN + (BUTTONS_WIDTH + MARGIN) * (i % 2) + BUTTONS_WIDTH // 2,
+            BUTTONS_HEIGHT + CELL_SIZE // 2 + (CELL_SIZE + MARGIN if i >= 2 else 0),
             fill='black',
             anchor='c',
             bold=True
         )
 
-
 def main():
     try:
-        juego = juego_crear()
+        game = create_game()
     except NotImplementedError:
-        gamelib.say('No se completaron todos los métodos de la Parte 1')
+        gamelib.say('Not all methods in Part 1 are completed')
         return
 
     gamelib.resize(
-        ANCHO_VENTANA,
-        ALTO_VENTANA
+        WINDOW_WIDTH,
+        WINDOW_HEIGHT
     )
 
     while gamelib.loop(fps=30):
         gamelib.draw_begin()
         try:
-            juego_mostrar_controles(juego)
-            juego_mostrar_grilla(juego)
+            display_controls(game)
+            display_grid(game)
         except NotImplementedError:
-            gamelib.say('No se completaron todos los métodos de la Parte 1')
+            gamelib.say('Not all methods in Part 1 are completed')
             return
         gamelib.draw_end()
 
@@ -207,19 +201,19 @@ def main():
                     return
 
                 if ev.key.lower() == 'z':
-                    juego.deshacer()
+                    game.undo()
 
                 if ev.key.lower() == 'x':
-                    juego.rehacer()
+                    game.redo()
 
                 if ev.key.lower() == 's':
-                    juego.calcular_nueva_solucion()
+                    game.calculate_new_solution()
 
                 if ev.key.lower() == 'n':
-                    juego = juego_crear()
+                    game = create_game()
 
             if ev.type == gamelib.EventType.ButtonPress:
                 x, y = ev.x, ev.y
-                juego = manejar_click(juego, x, y)
+                game = handle_click(game, x, y)
 
 gamelib.init(main)
