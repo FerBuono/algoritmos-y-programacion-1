@@ -1,236 +1,231 @@
 import csv
-import gamelib
 import os
 import random
+import gamelib
 
-ANCHO_TABLERO = 400
-ALTO_TABLERO = 400
-TAM_CASILLERO = ANCHO_TABLERO // 8
-CASILLEROS = 8
-VACIO = ''
-PIEZA_ACTIVA = 'activa'
-PIEZA_POSIBLE = 'posible'
-SANGRIA_TEXTO = TAM_CASILLERO * 0.5
-RUTA_MOVIMIENTOS = 'movimientos.csv'
-RUTA_GUARDADO = 'guardado.csv'
-RESPUESTAS_PROMPT = {'si': True, 'no': False}
+BOARD_WIDTH = 400
+BOARD_HEIGHT = 400
+SQUARE_SIZE = BOARD_WIDTH // 8
+SQUARES = 8
+EMPTY = ''
+ACTIVE_PIECE = 'active'
+POSSIBLE_PIECE = 'possible'
+TEXT_INDENT = SQUARE_SIZE * 0.5
+MOVEMENTS_PATH = 'data/movements.csv'
+SAVED_GAME_PATH = 'data/saved.csv'
+PROMPT_RESPONSES = {'yes': True, 'no': False}
 
 
-def cargar_juego():
+def load_game():
     '''
-        Devuelve el tablero del juego guardado en guardado.csv, y el respectivo nivel
+    Returns the saved game board from saved_game.csv, and the respective level.
     '''
-    juego = [['' for j in range(CASILLEROS)] for i in range(CASILLEROS)]
-    nivel = 0
+    game = [['' for j in range(SQUARES)] for i in range(SQUARES)]
+    level = 0
 
-    with open(RUTA_GUARDADO) as guardado:
-        for fila in csv.reader(guardado):
-            posicion, pieza, estado = fila
-            fil, col = posicion.split(';')
-            juego[int(fil)][int(col)] = (pieza, estado)
-            nivel += 1
+    with open(SAVED_GAME_PATH) as saved_game:
+        for row in csv.reader(saved_game):
+            position, piece, state = row
+            row, col = position.split(';')
+            game[int(row)][int(col)] = (piece, state)
+            level += 1
             
-    return juego, nivel - 2
+    return game, level - 2
 
 
-def guardar_juego(juego):
-    with open(RUTA_GUARDADO, "w", newline = '') as guardado:
-        guardado = csv.writer(guardado)
-        for fil in range(len(juego)):
-            for col in range(len(juego[fil])):
-                if juego[fil][col] != VACIO:
-                    pieza, estado = juego[fil][col]
-                    guardado.writerow([f'{fil};{col}', pieza, estado])
+def save_game(game):
+    with open(SAVED_GAME_PATH, "w", newline='') as saved_game:
+        writer = csv.writer(saved_game)
+        for row in range(len(game)):
+            for col in range(len(game[row])):
+                if game[row][col] != EMPTY:
+                    piece, state = game[row][col]
+                    writer.writerow([f'{row};{col}', piece, state])
 
 
-def cargar_movimientos_piezas():
+def load_piece_movements():
     '''
-        Devuelve un diccionario con las piezas como clave y una lista de sus posibles movimientos como valor
+    Returns a dictionary with pieces as keys and a list of their possible movements as values.
     '''
-    movimientos = {}
+    movements = {}
 
-    with open(RUTA_MOVIMIENTOS) as movs:
-        for linea in csv.reader(movs):
-            pieza, extensible = linea[0], linea[2]
-            direccion = linea[1].split(';')
+    with open(MOVEMENTS_PATH) as moves:
+        for line in csv.reader(moves):
+            piece, direction, extensible = line
+            direction = direction.split(';')
 
             if extensible == 'true':
-                for i in range(1, CASILLEROS + 1):
-                    movimientos[pieza] = movimientos.get(pieza, []) + [tuple(i * int(x) for x in direccion)]
+                for i in range(1, SQUARES + 1):
+                    movements[piece] = movements.get(piece, []) + [tuple(i * int(x) for x in direction)]
             else:
-                movimientos[pieza] = movimientos.get(pieza, []) + [tuple(int(x) for x in direccion)]
+                movements[piece] = movements.get(piece, []) + [tuple(int(x) for x in direction)]
     
-    return movimientos
+    return movements
 
 
-def juego_nuevo(movimientos, nivel):
+def new_game(movements, level):
     '''
-        Crea un juego nuevo dependiendo el nivel pasado, con su pieza activa y las posibles
+    Creates a new game depending on the given level, with its active piece and possible ones.
     '''
-    juego = [['' for j in range(CASILLEROS)] for i in range(CASILLEROS)]
+    game = [['' for j in range(SQUARES)] for i in range(SQUARES)]
     
-    pos_x_original, pos_y_original = random.randint(0, CASILLEROS - 1), random.randint(0, CASILLEROS - 1)
-    pieza_original = random.choice(list(movimientos))
+    original_x, original_y = random.randint(0, SQUARES - 1), random.randint(0, SQUARES - 1)
+    original_piece = random.choice(list(movements))
     
-    juego[pos_y_original][pos_x_original] = (pieza_original, PIEZA_ACTIVA)
+    game[original_y][original_x] = (original_piece, ACTIVE_PIECE)
     
-    pieza = pieza_original
-    pos_x, pos_y = pos_x_original, pos_y_original
+    piece = original_piece
+    x, y = original_x, original_y
     
-    for i in range(1, nivel + 2):
+    for i in range(1, level + 2):
         while True:
+            dir_x, dir_y = random.choice(movements[piece])
+            sum_x, sum_y = x + dir_x, y + dir_y
 
-            dir_x, dir_y = random.choice(movimientos[pieza])
-            suma_x, suma_y = pos_x + dir_x, pos_y + dir_y
-
-            if suma_x in range(CASILLEROS) and suma_y in range(CASILLEROS) and juego[suma_y][suma_x] == VACIO:
-            
-                pieza = random.choice(list(movimientos))
-                pos_x, pos_y = suma_x, suma_y 
-
-                juego[pos_y][pos_x] = (pieza, '')
+            if sum_x in range(SQUARES) and sum_y in range(SQUARES) and game[sum_y][sum_x] == EMPTY:
+                piece = random.choice(list(movements))
+                x, y = sum_x, sum_y 
+                game[sum_y][sum_x] = (piece, '')
                 
-                if (dir_x, dir_y) in movimientos[pieza_original]:
-                    juego[pos_y][pos_x] = (pieza, PIEZA_POSIBLE)
+                if (dir_x, dir_y) in movements[original_piece]:
+                    game[sum_y][sum_x] = (piece, POSSIBLE_PIECE)
                     
                 break
 
-    guardar_juego(juego)
-    return juego
+    save_game(game)
+    return game
 
 
-def actualizacion_pieza_activa(juego, pieza, casillero_x, casillero_y):
-    # Busco la posición de la pieza activa y borro el estado de todas
-    pos_x_activa, pos_y_activa = '', ''
+def update_active_piece(game, piece, square_x, square_y):
+    # Find the position of the active piece and clear the state of all pieces
+    active_x, active_y = '', ''
 
-    for fil in range(len(juego)):
-        for col in range(len(juego[fil])):
-            if juego[fil][col] != VACIO:
-                if juego[fil][col][1] == PIEZA_ACTIVA:
-                    pos_x_activa, pos_y_activa = col, fil
+    for row in range(len(game)):
+        for col in range(len(game[row])):
+            if game[row][col] != EMPTY:
+                if game[row][col][1] == ACTIVE_PIECE:
+                    active_x, active_y = col, row
+                game[row][col] = (game[row][col][0], '')
 
-                juego[fil][col] = (juego[fil][col][0], '')
-
-    juego[casillero_y][casillero_x] = (pieza, PIEZA_ACTIVA)
-    juego[pos_y_activa][pos_x_activa] = VACIO
+    game[square_y][square_x] = (piece, ACTIVE_PIECE)
+    game[active_y][active_x] = EMPTY
 
 
-def actualizacion_piezas_posibles(juego, pieza, casillero_x, casillero_y, movimientos):
-    # Cambio el estado de las nuevas piezas posibles
-    for direccion in movimientos[pieza]:
-        dir_x, dir_y = direccion
+def update_possible_pieces(game, piece, square_x, square_y, movements):
+    # Change the state of the new possible pieces
+    for direction in movements[piece]:
+        dir_x, dir_y = direction
 
-        for fil in range(len(juego)):
-            for col in range(len(juego[fil])):
-                suma_x, suma_y = dir_x + casillero_x, dir_y + casillero_y
-                if suma_x == col and suma_y == fil and juego[fil][col] != VACIO:
-                    juego[fil][col] = (juego[fil][col][0], PIEZA_POSIBLE)
+        for row in range(len(game)):
+            for col in range(len(game[row])):
+                sum_x, sum_y = dir_x + square_x, dir_y + square_y
+                if sum_x == col and sum_y == row and game[row][col] != EMPTY:
+                    game[row][col] = (game[row][col][0], POSSIBLE_PIECE)
 
-def juego_actualizar(movimientos, juego, x, y):
+def update_game(movements, game, x, y):
     '''
-        Actualiza el juego y el estado de las piezas dependiendo del movimiento realizado
+    Updates the game and the state of the pieces depending on the performed move.
     '''
-    casillero_x, casillero_y = x // TAM_CASILLERO, y // TAM_CASILLERO
+    square_x, square_y = x // SQUARE_SIZE, y // SQUARE_SIZE
     
-    if not casillero_x in range(CASILLEROS) or not casillero_y in range(CASILLEROS) or juego[casillero_y][casillero_x] == VACIO:
-        return juego
+    if not square_x in range(SQUARES) or not square_y in range(SQUARES) or game[square_y][square_x] == EMPTY:
+        return game
 
-    pieza, estado = juego[casillero_y][casillero_x]
+    piece, state = game[square_y][square_x]
 
-    if estado != PIEZA_POSIBLE:
-        return juego
+    if state != POSSIBLE_PIECE:
+        return game
     
-    actualizacion_pieza_activa(juego, pieza, casillero_x, casillero_y)
-    actualizacion_piezas_posibles(juego, pieza, casillero_x, casillero_y, movimientos)
+    update_active_piece(game, piece, square_x, square_y)
+    update_possible_pieces(game, piece, square_x, square_y, movements)
 
-    return juego
+    return game
 
 
-def juego_mostrar(juego, nivel):
+def display_game(game, level):
     '''
-        Dibuja el tablero de ajedréz con las piezas en sus estados correspondientes
+    Draws the chess board with the pieces in their corresponding states.
     '''
     gamelib.draw_begin()
 
-    gamelib.draw_rectangle(0, 0, ANCHO_TABLERO, ALTO_TABLERO + 75, fill="black")
+    gamelib.draw_rectangle(0, 0, BOARD_WIDTH, BOARD_HEIGHT + 75, fill="black")
 
-    for casillero_x in range(CASILLEROS):
-        for casillero_y in range(CASILLEROS):
-            
-            if (casillero_x + casillero_y) % 2 == 0:
-                gamelib.draw_rectangle(casillero_x * TAM_CASILLERO + 2, casillero_y * TAM_CASILLERO + 2, TAM_CASILLERO * (casillero_x + 1) - 2, TAM_CASILLERO * (casillero_y + 1) - 2, fill='#2D2D3F')
+    for square_x in range(SQUARES):
+        for square_y in range(SQUARES):
+            if (square_x + square_y) % 2 == 0:
+                gamelib.draw_rectangle(square_x * SQUARE_SIZE + 2, square_y * SQUARE_SIZE + 2, SQUARE_SIZE * (square_x + 1) - 2, SQUARE_SIZE * (square_y + 1) - 2, fill='#2D2D3F')
             else:
-                gamelib.draw_rectangle(casillero_x * TAM_CASILLERO + 2, casillero_y * TAM_CASILLERO + 2, TAM_CASILLERO * (casillero_x + 1) - 2, TAM_CASILLERO * (casillero_y + 1) - 2, fill='#171717')
+                gamelib.draw_rectangle(square_x * SQUARE_SIZE + 2, square_y * SQUARE_SIZE + 2, SQUARE_SIZE * (square_x + 1) - 2, SQUARE_SIZE * (square_y + 1) - 2, fill='#171717')
 
-            if juego[casillero_y][casillero_x] != VACIO:
-                pieza, estado = juego[casillero_y][casillero_x]
+            if game[square_y][square_x] != EMPTY:
+                piece, state = game[square_y][square_x]
 
-                if estado == PIEZA_ACTIVA:
-                    gamelib.draw_image(f"img/{pieza}_rojo.gif", (casillero_x * TAM_CASILLERO) + 3, (casillero_y * TAM_CASILLERO) + 3)
-                elif estado == PIEZA_POSIBLE:
-                    gamelib.draw_rectangle(casillero_x * TAM_CASILLERO + 3, casillero_y * TAM_CASILLERO + 3, TAM_CASILLERO * (casillero_x + 1) - 2, TAM_CASILLERO * (casillero_y + 1) - 2, fill = '', outline = 'red', width = '2')
-                    gamelib.draw_image(f"img/{pieza}_blanco.gif", (casillero_x * TAM_CASILLERO) + 3, (casillero_y * TAM_CASILLERO) + 3)
-                elif estado == '':
-                    gamelib.draw_image(f"img/{pieza}_blanco.gif", (casillero_x * TAM_CASILLERO) + 3, (casillero_y * TAM_CASILLERO) + 3)
+                if state == ACTIVE_PIECE:
+                    gamelib.draw_image(f"images/{piece}_rojo.gif", (square_x * SQUARE_SIZE) + 3, (square_y * SQUARE_SIZE) + 3)
+                elif state == POSSIBLE_PIECE:
+                    gamelib.draw_rectangle(square_x * SQUARE_SIZE + 3, square_y * SQUARE_SIZE + 3, SQUARE_SIZE * (square_x + 1) - 2, SQUARE_SIZE * (square_y + 1) - 2, fill='', outline='red', width='2')
+                    gamelib.draw_image(f"images/{piece}_blanco.gif", (square_x * SQUARE_SIZE) + 3, (square_y * SQUARE_SIZE) + 3)
+                elif state == '':
+                    gamelib.draw_image(f"images/{piece}_blanco.gif", (square_x * SQUARE_SIZE) + 3, (square_y * SQUARE_SIZE) + 3)
 
-    gamelib.draw_text('SHAPE SHIFTER CHESS', SANGRIA_TEXTO, ALTO_TABLERO + 15, size = 10, bold = True, anchor = 'nw')
-    gamelib.draw_text(f'Nivel: {nivel}', SANGRIA_TEXTO, ALTO_TABLERO + 40, size = 10, bold = True, anchor = 'nw')
-    gamelib.draw_text('Salir: Esc', SANGRIA_TEXTO + ANCHO_TABLERO // 2, ALTO_TABLERO + 15, size = 10, bold = True, anchor = 'nw')
-    gamelib.draw_text('Reintentar: Z', SANGRIA_TEXTO + ANCHO_TABLERO // 2, ALTO_TABLERO + 40, size = 10, bold = True, anchor = 'nw')
+    gamelib.draw_text('SHAPE SHIFTER CHESS', TEXT_INDENT, BOARD_HEIGHT + 15, size=10, bold=True, anchor='nw')
+    gamelib.draw_text(f'Level: {level}', TEXT_INDENT, BOARD_HEIGHT + 40, size=10, bold=True, anchor='nw')
+    gamelib.draw_text('Exit: Esc', TEXT_INDENT + BOARD_WIDTH // 2, BOARD_HEIGHT + 15, size=10, bold=True, anchor='nw')
+    gamelib.draw_text('Retry: Z', TEXT_INDENT + BOARD_WIDTH // 2, BOARD_HEIGHT + 40, size=10, bold=True, anchor='nw')
 
     gamelib.draw_end()
 
 def main():
-    movimientos = cargar_movimientos_piezas()
-    juego = []
-    nivel = 0 
-    cargar = None
+    movements = load_piece_movements()
+    game = []
+    level = 0 
+    load = None
     
-    # Verifico si hay un juego guardado para cargar
-    if os.path.exists(RUTA_GUARDADO):
+    # Check if there is a saved game to load
+    if os.path.exists(SAVED_GAME_PATH):
         while True:
-            cargar = gamelib.input('¿Quiere continuar el juego guardado? (Si/No)')
-            if cargar == None:
+            load = gamelib.input('Do you want to continue the saved game? (Yes/No)')
+            if load is None:
                 return
-            if cargar.lower() in RESPUESTAS_PROMPT:
-                cargar = RESPUESTAS_PROMPT[cargar.lower()]
+            if load.lower() in PROMPT_RESPONSES:
+                load = PROMPT_RESPONSES[load.lower()]
                 break
 
-    if cargar:
-        juego, nivel = cargar_juego()
+    if load:
+        game, level = load_game()
     else:
-        nivel = 1
-        juego = juego_nuevo(movimientos, nivel)
+        level = 1
+        game = new_game(movements, level)
     
     gamelib.title("Shape Shifter Chess")
-    gamelib.resize(ANCHO_TABLERO, ALTO_TABLERO + 75)
+    gamelib.resize(BOARD_WIDTH, BOARD_HEIGHT + 75)
 
     while gamelib.is_alive():
-        juego_mostrar(juego, nivel)
+        display_game(game, level)
 
         ev = gamelib.wait()
         if not ev:
             break
 
         if ev.type == gamelib.EventType.ButtonPress and ev.mouse_button == 1:
-            # Chequear si se sigue pasó el nivel dependiendo de las piezas en el tablero
+            # Check if the level is passed based on the pieces on the board
             x, y = ev.x, ev.y
-            juego = juego_actualizar(movimientos, juego, x, y)
+            game = update_game(movements, game, x, y)
                 
-            piezas_tablero = [juego[fil][col] for fil in range(len(juego)) for col in range(len(juego[fil])) if juego[fil][col] != VACIO ]
+            pieces_on_board = [game[row][col] for row in range(len(game)) for col in range(len(game[row])) if game[row][col] != EMPTY]
             
-            if len(piezas_tablero) == 1:
-                nivel += 1
-                juego = juego_nuevo(movimientos, nivel)
+            if len(pieces_on_board) == 1:
+                level += 1
+                game = new_game(movements, level)
             
         elif ev.type == gamelib.EventType.KeyPress:
 
             if ev.key == 'Escape':
-                # Finalizar juego
+                # End game
                 break
 
-            if ev.key == 'z' or ev.key == 'Z':
-                # Reiniciar juego
-                juego, nivel = cargar_juego()
+            if ev.key.lower() == 'z':
+                # Retry game
+                game, level = load_game()
 
 gamelib.init(main)
