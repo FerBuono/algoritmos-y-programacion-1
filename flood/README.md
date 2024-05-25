@@ -16,6 +16,7 @@ Flood is a puzzle game where the objective is to change the colors of the cells 
 ### Prerequisites
 
 - Python 3.x
+- Tkinter
 
 ### Running the Game
 
