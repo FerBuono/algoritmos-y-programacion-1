@@ -1,53 +1,50 @@
-from logic import formatear_dimensiones, crear_matriz, mostrar_juego, mover, MOVIMIENTOS_RANDOM, MOVIMIENTOS
-
+from logic import format_dimensions, create_matrix, display_game, move, RANDOM_MOVES, MOVEMENTS
 
 def main():
-    '''
-        FIFTEEN: Es un sencillo juego donde el objetivo es ordenar todos los números 
-        de izquierda a derecha y de arriba a abajo dado un tablero de dimensiones NxM 
-        el cual siempre tiene un casillero vacío. Para ello el jugador puede mover las 
-        fichas en diferentes direcciones, usando siempre el espacio vacío.
+    """
+    FIFTEEN: A simple game where the objective is to arrange all the numbers from left to right and top to bottom
+    given a board of dimensions NxM, which always has one empty cell. The player can move the tiles in different
+    directions using the empty space.
 
-        Finalmente, el juego se considera ganado si todos los elementos están ordenados
-         de izquierda a derecha, con el vacío ubicado en el vértice inferior derecho.
+    The game is won when all elements are ordered from left to right, with the empty cell located in the bottom-right corner.
 
-        Direcciones válidas: 'a', 'w', 's, 'd'
-        Para finalizar el juego: 'o'
-    '''
-    movimientos = 0
-    limite_movimientos = MOVIMIENTOS_RANDOM * 5
+    Valid directions: 'a', 'w', 's', 'd'
+    To end the game: 'o'
+    """
+    moves = 0
+    move_limit = RANDOM_MOVES * 5
 
-    dimension_tablero = input('\nIngrese las dimensiones del tablero (ej: 4x3): ')
+    board_dimensions = input('\nEnter the board dimensions (e.g., 4x3): ')
 
-    matriz_juego, matriz_backup = crear_matriz(dimension_tablero)
+    game_matrix, backup_matrix = create_matrix(board_dimensions)
 
-    # Mostrar juego inicial
-    mostrar_juego(matriz_juego, movimientos, limite_movimientos)
+    # Show initial game state
+    display_game(game_matrix, moves, move_limit)
 
-    # Mientras no esté finalizado, seguir solicitando entradas
-    while (matriz_juego != matriz_backup) and (movimientos < limite_movimientos):
-        entradas = input('Entrada/s: ')
+    # Keep asking for inputs while the game is not finished
+    while (game_matrix != backup_matrix) and (moves < move_limit):
+        inputs = input('Input: ')
 
-        for entrada in entradas:
-            while entrada not in MOVIMIENTOS + ['o']:
-                entrada = input('"' + entrada + '" no es válida, intente nuevamente: ')
+        for user_input in inputs:
+            while user_input not in MOVEMENTS + ['o']:
+                user_input = input(f'"{user_input}" is not valid, try again: ')
 
-            if entrada == 'o':
-                mostrar_juego(matriz_juego, movimientos, limite_movimientos)
-                print('\nJuego finalizado...\n')
-                return
-            
-            mover(entrada, matriz_juego)
-            movimientos += 1
-
-            if movimientos >= limite_movimientos:
-                mostrar_juego(matriz_juego, movimientos, limite_movimientos)
-                print('\nPerdiste :(\n')
+            if user_input == 'o':
+                display_game(game_matrix, moves, move_limit)
+                print('\nGame over...\n')
                 return
 
-        mostrar_juego(matriz_juego, movimientos, limite_movimientos)
-    
-    print('\n¡¡Ganaste!!\n')
-    return
+            move(user_input, game_matrix)
+            moves += 1
 
-main()
+            if moves >= move_limit:
+                display_game(game_matrix, moves, move_limit)
+                print('\nYou lost :(\n')
+                return
+
+        display_game(game_matrix, moves, move_limit)
+
+    print('\nYou won!!\n')
+
+if __name__ == "__main__":
+    main()

@@ -1,108 +1,80 @@
 import random
 
-VACIO = ""
-MOVIMIENTOS = ['a', 'w', 'd', 's']
-MOVIMIENTOS_RANDOM = 50
+EMPTY = ""
+MOVEMENTS = ['a', 'w', 'd', 's']
+RANDOM_MOVES = 50
 
-def formatear_dimensiones(dimensiones):
-    '''
-        Funcion que recibe las dimensiones del juego en formato numxnum y 
-        devuelve ambos números por separado. Si el formato de ingreso no 
-        es el indicado entonces pide que se ingresen nuevamente las dimensiones
-    '''
-    dimensiones_separadas = []
-
+def format_dimensions(dimensions):
+    """
+    Function that receives the game dimensions in the format numxnum and returns both numbers separately.
+    If the input format is not as expected, it asks for the dimensions again.
+    """
     while True:
-
-        if 'x' in dimensiones:
-            dimension_1, dimension_2 = dimensiones.split('x')
-
+        if 'x' in dimensions:
+            dimension_1, dimension_2 = dimensions.split('x')
             if dimension_1.isdigit() and dimension_2.isdigit():
-                break
-        
-        dimensiones = input('Ingrese dimensiones válidas (ej: 4x3): ')
-        continue
+                return int(dimension_1), int(dimension_2)
+        dimensions = input('Enter valid dimensions (e.g., 4x3): ')
 
-    return int(dimension_1), int(dimension_2)
-
-
-def crear_matriz(dimension_tablero):
-    '''
-        Función que recibe dos números enteros y devuelve una matriz 
-        desordenada de N filas x M columnas rellenada con números del 
-        1 al (N * M - 1). Para desordenarla se utiliza random.choice y
-        llama a la función mover(), mandando como parámetro un movimiento
-        al azar y la matriz
-    '''
-    N, M = formatear_dimensiones(dimension_tablero)
+def create_matrix(board_dimensions):
+    """
+    Function that receives the board dimensions and returns a shuffled matrix of N rows x M columns
+    filled with numbers from 1 to (N * M - 1). To shuffle, it uses random.choice and calls the move()
+    function, sending a random move and the matrix as parameters.
+    """
+    N, M = format_dimensions(board_dimensions)
 
     num = 1
-    matriz = []
-    matriz_backup = []
+    matrix = [[num + col + row * M for col in range(M)] for row in range(N)]
+    backup_matrix = [row[:] for row in matrix]
 
-    for fil in range(N):
-        matriz.append([])
-        matriz_backup.append([])
+    matrix[-1][-1] = EMPTY
+    backup_matrix[-1][-1] = EMPTY
 
-        for col in range(M):
-            matriz[fil].append(num + col)
-            matriz_backup[fil].append(num + col)
+    for _ in range(RANDOM_MOVES):
+        move(random.choice(MOVEMENTS), matrix)
 
-        num = 1 + matriz[fil][-1]
-        num = 1 + matriz_backup[fil][-1]
-   
-    matriz[-1][-1] = VACIO
-    matriz_backup[-1][-1] = VACIO
-   
-    for i in range(MOVIMIENTOS_RANDOM):
-        mover(random.choice(MOVIMIENTOS), matriz)
+    return matrix, backup_matrix
 
-    return matriz, matriz_backup
+def display_game(matrix, moves, move_limit):
+    """
+    Function that receives a matrix and prints it in the specified format,
+    along with game instructions and move counts.
+    """
+    print("\n====", "Fifteen", "====")
+    print('\n'.join(['  |'.join(['{:3}'.format(num) for num in row]) for row in matrix]))
+    print("\nControls: w, a, s, d")
+    print("Exit the game: o")
+    print('Moves made: ', moves)
+    print('Moves remaining: ', move_limit - moves)
 
+def move(direction, matrix):
+    """
+    Function that receives a direction (already validated as valid) and the matrix to alter,
+    and returns the same matrix with positions changed according to the move.
+    Valid directions: 'a', 'w', 's', 'd'
+    """
+    empty_row, empty_col = locate_empty(matrix)
+    new_row, new_col = empty_row, empty_col
 
-def mostrar_juego(matriz, movimientos, limite_movimientos):
-    '''
-        Función que recibe una matriz y la imprime con el formato indicado,
-        junto con las instrucciones de juego y los movimientos
-    '''
-    print("\n====", "Fiften", "====")
-    print('\n'.join(['  |'.join(['{:3}'.format(num) for num in fil]) for fil in matriz]))
-    print("\nControles: w, a, s, d")
-    print("Salir del juego: o")
-    print('Movimientos realizados: ', movimientos)
-    print('Movimientos restantes: ', limite_movimientos - movimientos)
+    if direction == 'w':
+        new_row = empty_row + 1
+    elif direction == 's':
+        new_row = empty_row - 1
+    elif direction == 'a':
+        new_col = empty_col + 1
+    elif direction == 'd':
+        new_col = empty_col - 1
 
+    if 0 <= new_row < len(matrix) and 0 <= new_col < len(matrix[new_row]):
+        matrix[empty_row][empty_col] = matrix[new_row][new_col]
+        matrix[new_row][new_col] = EMPTY
 
-def mover(direccion, matriz):
-    '''
-        Función que recibe una direccion (ya verificada que es válida) 
-        y la matriz a alterar, y devuelve la misma pero con las posiciones
-        cambiadas según el movimiento a realizar. 
-        Direcciones válidas: 'a', 'w', 's, 'd'
-    '''
-    fil_vacio, col_vacio = ubicar_vacio(matriz)
-    fil_nuevo, col_nuevo = fil_vacio, col_vacio
-
-    if direccion == 'w':
-        fil_nuevo = fil_vacio + 1
-    if direccion == 's':
-        fil_nuevo = fil_vacio - 1
-    if direccion == 'a':
-        col_nuevo = col_vacio + 1
-    if direccion == 'd':
-        col_nuevo = col_vacio - 1
-
-    if (0 <= fil_nuevo <= len(matriz) - 1) and (0 <= col_nuevo <= len(matriz[fil_nuevo]) - 1):
-        matriz[fil_vacio][col_vacio] = matriz[fil_nuevo][col_nuevo]
-        matriz[fil_nuevo][col_nuevo] = VACIO
-
-
-def ubicar_vacio(matriz):
-    '''
-        Función que ubica el casillero vacío en una matriz
-    '''
-    for fil in range(len(matriz)):
-        for col in range(len(matriz[fil])):
-            if matriz[fil][col] == VACIO:
-                return fil, col
-
+def locate_empty(matrix):
+    """
+    Function that locates the empty cell in a matrix.
+    """
+    for row in range(len(matrix)):
+        for col in range(len(matrix[row])):
+            if matrix[row][col] == EMPTY:
+                return row, col
